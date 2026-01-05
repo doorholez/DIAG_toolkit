@@ -3,7 +3,7 @@ import pandas as pd
 import scipy.stats as sts
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import os, argparse, natsort
+import os, argparse, natsort, sys
 
 def calc_amplicon(rd, ad, p = 0.5, bootstrap = 0):
     if len(rd) != len(ad):
@@ -475,25 +475,20 @@ if __name__ == "__main__":
         def _format_action_invocation(self, action):
             if not action.option_strings or action.nargs == 0:
                 return super()._format_action_invocation(action)
-            
-            # get metavar (e.g., REGION_SIZE)
             default = self._get_default_metavar_for_optional(action)
             args_string = self._format_args(action, default)
-            
-            # combine all options: --region_size, -r REGION_SIZE
-            # only add args_string after the last option
             return ', '.join(action.option_strings[:-1]) + f', {action.option_strings[-1]} {args_string}'
         
     parser = argparse.ArgumentParser(description="Estimate DIA of whole genome and split regions.",
                                      formatter_class=CustomFormatter)
     parser.add_argument("input_file", help="Input file path")
     parser.add_argument("output_file", nargs="?", help="Output file path")
-    parser.add_argument("--region_size", '-r', type=int, default=10_000_000, help="Region size to be splitted (default: 10,000,000)")
-    parser.add_argument("--bootstrap", '-b', type=int, default=1000, help="Bootstrap number for whole genome (default: 1000)")
-    parser.add_argument("--bootstrap_region", '-br', type=int, default=None, help="Bootstrap number for region (default: 0.5x of whole genome)")
-    parser.add_argument("--quiet", '-q', action='store_const', const='quiet', dest='verbosity', help="Quiet mode, suppress output messages. Warnings will still be shown")
-    parser.add_argument("--silent", '-s', action='store_const', const='silent', dest='verbosity', help="Silent mode, suppress output messages. Warnings will NOT be shown")
-    parser.add_argument("--version", "-v", action="version", version="calc_eDIA.py 0.1.0")
+    parser.add_argument('-r', "--region_size", type=int, default=10_000_000, help="Region size to be splitted (default: 10,000,000)")
+    parser.add_argument('-b', "--bootstrap", type=int, default=1000, help="Bootstrap number for whole genome (default: 1000)")
+    parser.add_argument('-br', "--bootstrap_region", type=int, default=None, help="Bootstrap number for region (default: 0.5x of whole genome)")
+    parser.add_argument('-q', "--quiet", action='store_const', const='quiet', dest='verbosity', help="Quiet mode, suppress output messages. Warnings will still be shown")
+    parser.add_argument('-s', "--silent", action='store_const', const='silent', dest='verbosity', help="Silent mode, suppress output messages. Warnings will NOT be shown")
+    parser.add_argument('-v', "--version", action="version", version="calc_eDIA.py 0.1.0")
     parser.set_defaults(verbosity='normal')
 
     args = parser.parse_args()
@@ -507,7 +502,20 @@ if __name__ == "__main__":
             args.output_file = base + '.html'
         else:
             args.output_file = args.input_file + '.html'
-            
+
+    if os.path.exists(args.output_file):
+        if not os.access(args.output_file, os.W_OK):
+            print(f"Error: Cannot write to output file {args.output_file}. Check permissions.")
+            sys.exit(1)
+    else:
+        parent_dir = os.path.dirname(args.output_file) or '.'
+        if not os.path.exists(parent_dir):
+            print(f"Error: Directory {parent_dir} does not exist.")
+            sys.exit(1)
+        if not os.access(parent_dir, os.W_OK):
+            print(f"Error: Cannot write to directory {parent_dir}. Check permissions.")
+            sys.exit(1)
+
     if args.verbosity == 'normal':
         print(f"Processing {args.input_file}...")
         print(f"Region size to be splitted: {args.region_size}")
@@ -525,7 +533,6 @@ if __name__ == "__main__":
         p=loaded['p'].values,
         bootstrap=args.bootstrap)
     
-    print(args.bootstrap, len(bootstrap_eDIA))
     if args.bootstrap > 0 and isinstance(bootstrap_eDIA, list) and len(bootstrap_eDIA) > 0:
         wg_lower = np.percentile(bootstrap_eDIA, 2.5)
         wg_upper = np.percentile(bootstrap_eDIA, 97.5)
