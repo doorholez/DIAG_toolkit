@@ -20,7 +20,7 @@ def parse_gt(gt_str):
         return None
 
 
-def process_vcf(vcf_path, prefix, filter_str, region, min_depth):
+def process_vcf(vcf_path, prefix, filter_str, region, min_depth, exclude_chroms=None):
     if not os.path.exists(vcf_path):
         print(f"Error: File {vcf_path} not found.")
         return
@@ -75,10 +75,10 @@ def process_vcf(vcf_path, prefix, filter_str, region, min_depth):
                     # parts[9] is the first sample (Reference)
                     # parts[10:] are experiment samples
                     ref_sample_name = parts[9]
-                    exp_sample_names = parts[10:]
+                    exp_sample_names = parts[9:]
                     
                     print(f"Bulk sample: {ref_sample_name}")
-                    print(f"Experiment samples: {exp_sample_names}")
+                    print(f"Experiment samples: {exp_sample_names[1:]}")
                     
                     # Create output files for experiment samples
                     for sample in exp_sample_names:
@@ -96,13 +96,24 @@ def process_vcf(vcf_path, prefix, filter_str, region, min_depth):
                                 fh.close()
                             return
                     continue
+                print(exp_samples)
+                raise
 
                 # Data lines
                 parts = line.split('\t')
                 chrom = parts[0]
                 pos = parts[1]
                 filter_val = parts[6]
-                
+
+                if exclude_chroms and chrom in exclude_chroms:
+                    continue
+
+                # only process SNVs
+                ref = parts[3]
+                alt = parts[4].split(',')
+                if len(ref) != 1 or any(len(a) != 1 for a in alt):
+                    continue
+
                 # Filter by FILTER column
                 if filter_str and filter_val != filter_str:
                     continue
@@ -161,8 +172,7 @@ def process_vcf(vcf_path, prefix, filter_str, region, min_depth):
                 
                 # Process Experiment Samples
                 for i, sample_name in enumerate(exp_samples):
-                    # Exp sample index in parts is 10 + i
-                    exp_idx = 10 + i
+                    exp_idx = 9 + i
                     if exp_idx >= len(parts):
                         break
                         
@@ -202,14 +212,24 @@ def process_vcf(vcf_path, prefix, filter_str, region, min_depth):
             fh.close()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process VCF file to extract allele depths for bulk heterozygous sites.\nFirst sample in VCF is considered the bulk sample.")
+    class CustomFormatter(argparse.HelpFormatter):
+        def _format_action_invocation(self, action):
+            if not action.option_strings or action.nargs == 0:
+                return super()._format_action_invocation(action)
+            default = self._get_default_metavar_for_optional(action)
+            args_string = self._format_args(action, default)
+            return ', '.join(action.option_strings[:-1]) + f', {action.option_strings[-1]} {args_string}'
+        
+    parser = argparse.ArgumentParser(description="Process VCF file to extract allele depths for bulk heterozygous sites.\nFirst sample in VCF is considered the bulk sample.",
+                                     formatter_class=CustomFormatter)
     parser.add_argument("input_vcf", help="Path to the input VCF file")
-    parser.add_argument("--prefix", "-p", default="", help="Prefix for output files")
-    parser.add_argument("--filter", "-f", dest="filter_str", help="Filter string (exact match in FILTER column)")
-    parser.add_argument("--region", "-R", help="Region splice (format: chrom:start-end)")
-    parser.add_argument("--depth", "-d", type=int, help="Minimum depth")
-    parser.add_argument("--version", "-v", action="version", version="process_vcf.py 0.1.0")
+    parser.add_argument("-p", "--prefix", default="", help="Prefix for output files")
+    parser.add_argument("-f", "--filter", dest="filter_str", help="Filter string (exact match in FILTER column)")
+    parser.add_argument("-R", "--region", help="Region splice (format: chrom:start-end)")
+    parser.add_argument("-e", "--exclude_chroms", nargs='*', help="List of chromosomes to exclude from analysis")
+    parser.add_argument("-d", "--depth", type=int, help="Minimum depth")
+    parser.add_argument("-v", "--version", action="version", version="process_vcf.py 0.1.0")
     
     args = parser.parse_args()
     
-    process_vcf(args.input_vcf, args.prefix, args.filter_str, args.region, args.depth)
+    process_vcf(args.input_vcf, args.prefix, args.filter_str, args.region, args.depth, args.exclude_chroms)
