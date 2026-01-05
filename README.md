@@ -7,6 +7,7 @@ For bugs, suggestions, questions, collaborations etc. please contact [who?](mail
 
 1.  **`process_vcf.py`**: Parses a VCF file to extract allele depths for experiment samples at sites where the bulk sample is heterozygous.
 2.  **`calc_eDIA.py`**: Calculates eDIA metrics, performs bootstrap analysis, and generates interactive HTML plots.
+3.  **`fast_analyse.py`**: Calculates whole-genome eDIA for multiple samples with default settings directly from a VCF file.
 
 ## Installation
 
@@ -51,6 +52,7 @@ python process_vcf.py [options] <input_vcf>
 *   `-p`, `--prefix`: Prefix string to add to output filenames.
 *   `-f`, `--filter`: Filter string (e.g., `PASS`). Only variants with this exact value in the FILTER column are processed.
 *   `-R`, `--region`: Limit processing to a specific genomic region (format: `chrom:start-end`).
+*   `-e`, `--exclude-chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of eDIA estimation.
 *   `-d`, `--depth`: Minimum depth threshold. Sites with total depth lower than this value (in either bulk or experiment) are skipped.
 
 **Output:**
@@ -106,6 +108,32 @@ An HTML file containing:
 1.  **Whole Genome eDIA Bootstrap Distribution**: Density distribution plot of bootstrap results.
 2.  **Copy Number & Allele Frequency**: Genomic tracks showing estimated allele frequency and ploidy.
 3.  **Split Region eDIA**: Genomic track showing eDIA values with 95% confidence intervals.
+
+### 3. Simple Analysis (`simple_analyse.py`)
+
+This script performs a simple whole-genome eDIA analysis with default settings for all experiment samples in a VCF file directly. It skips region splitting and assumes a global ploidy (p=0.5), making it suitable for rapid quality control of multiple samples.
+
+**Syntax:**
+
+```bash
+python simple_analyse.py [options] <input_vcf> [output_tsv]
+```
+
+**Arguments:**
+
+*   `input_vcf`: Path to the input VCF file (supports `.vcf` and `.vcf.gz`).
+*   `output_tsv`: (Optional) Path for the output TSV file. Defaults to `<input_vcf_basename>_samples_eDIA.tsv`.
+*   `-b`, `--bootstrap`: Number of bootstrap iterations (default: 1000).
+*   `-e`, `--exclude-chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of eDIA estimation.
+
+**Output:**
+
+A TSV file containing eDIA metrics for each sample:
+```text
+sample_name     eDIA    bootstrap_lower bootstrap_upper
+Sample1         15.23   14.50           16.10
+Sample2         8.45    8.10            8.90
+```
 
 ## Example Workflow
 
