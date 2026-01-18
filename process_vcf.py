@@ -96,8 +96,8 @@ def process_vcf(vcf_path, prefix, filter_str, region, min_depth, exclude_chroms=
                                 fh.close()
                             return
                     continue
-                print(exp_samples)
-                raise
+                # print(exp_samples)
+                # raise
 
                 # Data lines
                 parts = line.split('\t')
