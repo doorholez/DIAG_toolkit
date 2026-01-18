@@ -218,7 +218,7 @@ def process_and_analyze(vcf_path, output_path, bootstrap_n, exclude_chroms=None,
     print("Analyzing samples...")
     try:
         with open(output_path, 'w') as out:
-            out.write("sample_name\teDIA\tbootstrap_lower\tbootstrap_upper\n")
+            out.write("sample_name\tDIA\tbootstrap_lower\tbootstrap_upper\n")
             
             for sample in exp_sample_names:
                 data = samples_data[sample]
@@ -245,7 +245,7 @@ def process_and_analyze(vcf_path, output_path, bootstrap_n, exclude_chroms=None,
                     upper = upper if not np.isnan(upper) else np.inf
                 
                 out.write(f"{sample}\t{dia:.2f}\t{lower:.2f}\t{upper:.2f}\n")
-                print(f"Processed {sample}: eDIA={dia:.2f} (95% CI: {lower:.2f}-{upper:.2f})")
+                print(f"Processed {sample}: DIA={dia:.2f} (95% CI: {lower:.2f}-{upper:.2f})")
 
     except IOError as e:
         print(f"Error writing output: {e}")
@@ -259,7 +259,7 @@ if __name__ == "__main__":
             args_string = self._format_args(action, default)
             return ', '.join(action.option_strings[:-1]) + f', {action.option_strings[-1]} {args_string}'
         
-    parser = argparse.ArgumentParser(description="Fast eDIA analysis from VCF for all experiment samples.\nFirst sample in VCF is considered the bulk sample.",
+    parser = argparse.ArgumentParser(description="Fast DIA analysis from VCF for all experiment samples.\nFirst sample in VCF is considered the bulk sample.",
                                      formatter_class=CustomFormatter)
     parser.add_argument("input_vcf", help="Path to input VCF file")
     parser.add_argument("output_tsv", nargs="?", help="Path to output TSV file")
@@ -274,7 +274,7 @@ if __name__ == "__main__":
         base, ext = os.path.splitext(args.input_vcf)
         if ext == '.gz':
             base, ext = os.path.splitext(base)
-        args.output_tsv = f"{base}_samples_eDIA.tsv"
+        args.output_tsv = f"{base}_samples_DIA.tsv"
     
     if os.path.exists(args.output_tsv):
         if not os.access(args.output_tsv, os.W_OK):
