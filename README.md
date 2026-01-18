@@ -3,7 +3,7 @@
 # DIAG: A standardized metric for WGA quality control
 
 DIAG toolkit provides scripts for estimating Depth of Independent Amplicons (DIA) metrics from VCF files. It consists of a pre-processing script to extract relevant allele depths and a calculation script to compute metrics and generate visualization reports.  
-For bugs, suggestions, questions, collaborations etc. please contact [who?](mailto:email@address.cn)
+For bugs, suggestions, questions, collaborations etc. please contact [MengDong Zhang](mailto:doorholez@gmail.com)
 
 ## Scripts
 
