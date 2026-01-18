@@ -1,3 +1,5 @@
+<img src="assets/DIAG_logo.png" height=40% width=40%>
+
 # DIAG: A standardized metric for WGA quality control
 
 DIAG toolkit provides scripts for estimating Depth of Independent Amplicons (DIA) metrics from VCF files. It consists of a pre-processing script to extract relevant allele depths and a calculation script to compute metrics and generate visualization reports.  
@@ -7,7 +9,7 @@ For bugs, suggestions, questions, collaborations etc. please contact [who?](mail
 
 1.  **`process_vcf.py`**: Parses a VCF file to extract allele depths for experiment samples at sites where the bulk sample is heterozygous.
 2.  **`calc_DIA.py`**: Calculates DIA metrics, performs bootstrap analysis, and generates interactive HTML plots.
-3.  **`fast_analyse.py`**: Calculates whole-genome DIA for multiple samples with default settings directly from a VCF file.
+3.  **`simple_analyse.py`**: Calculates whole-genome DIA for multiple samples with default settings directly from a VCF file.
 
 ## Installation
 
@@ -52,7 +54,7 @@ python process_vcf.py [options] <input_vcf>
 *   `-p`, `--prefix`: Prefix string to add to output filenames.
 *   `-f`, `--filter`: Filter string (e.g., `PASS`). Only variants with this exact value in the FILTER column are processed.
 *   `-R`, `--region`: Limit processing to a specific genomic region (format: `chrom:start-end`).
-*   `-e`, `--exclude-chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of DIA estimation.
+*   `-e`, `--exclude_chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of DIA estimation.
 *   `-d`, `--depth`: Minimum depth threshold. Sites with total depth lower than this value (in either bulk or experiment) are skipped.
 
 **Output:**
@@ -124,7 +126,7 @@ python simple_analyse.py [options] <input_vcf> [output_tsv]
 *   `input_vcf`: Path to the input VCF file (supports `.vcf` and `.vcf.gz`).
 *   `output_tsv`: (Optional) Path for the output TSV file. Defaults to `<input_vcf_basename>_samples_eIA.tsv`.
 *   `-b`, `--bootstrap`: Number of bootstrap iterations (default: 1000).
-*   `-e`, `--exclude-chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of DIA estimation.
+*   `-e`, `--exclude_chroms`: Space-separated list of chromosomes to exclude (e.g., `chrX chrY chrM`). Excluding haploid chromosomes can improve the accuracy of DIA estimation.
 
 **Output:**
 
@@ -139,14 +141,20 @@ Sample2         8.45    8.10            8.90
 
 ```bash
 # 1. Process the VCF file
-# Extracts data for samples in 'variants.vcf.gz', filtering for 'PASS' variants
-# and a minimum depth of 10. Output files will start with 'out_'.
-python process_vcf.py variants.vcf.gz --prefix out_ --filter PASS --depth 10
+# Extracts data for samples in 'variants.vcf.gz', filtering for 'PASS' variants,
+# a minimum depth of 10 and exclude the haploid chromosome 'contig_C'.
+python process_vcf.py test_data/variants.vcf.gz --prefix test_data/ --filter PASS --depth 10 --exclude_chroms contig_C
 
 # 2. Calculate DIA for a specific sample
-# Processes the output for 'SampleA' generated in the previous step.
-python calc_DIA.py out_SampleA.txt SampleA_report.html
+# Processes the output for 'Sample_3' sample generated in the previous step.
+python calc_DIA.py test_data/Sample_3.txt test_data/Sample_3.html
+
+# 3. Analyse the VCF file simply
+# Perform a simple analysis for samples in 'variants.vcf.gz', filtering for 'PASS' variants,
+# a minimum depth of 10 and exclude haploid chromosome 'contig_C'.
+python simple_analyse.py test_data/variants.vcf.gz test_data/variants.tsv --exclude_chroms contig_C
 ```
+**Note on Test Data**: For privacy and security reasons, the sample data provided in the `test_data/` directory has been truncated and censored. It is intended for demonstration only and does not contain any reasonable biology infomation.
 
 ## Feedback and Contribution
 
